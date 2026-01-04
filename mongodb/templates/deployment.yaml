@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: roboshop
+  # labels for deployment. These can be different from pod labels and selector. These are just for deployment identification
+  labels:
+    project: roboshop
+    environment: dev
+spec:
+  replicas: {{ .Values.deployment.replicaCount }}
+  # selector to identify pods managed by deployment
+  selector:
+    matchLabels:
+      project: roboshop
+      environment: dev
+      component: mongodb
+  # pod template. RS controller uses this to create pods
+  template:
+    metadata:
+      # pod template labels. Should match selector
+      labels:
+        project: roboshop
+        environment: dev
+        component: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: "{{ .Values.deployment.imageRepo }}:{{ .Values.deployment.imageVersion }}"
+          imagePullPolicy: {{ .Values.deployment.policy }}  # always pulls image from repo. This ensures latest image is used
+          # Readiness probe is to check if container is ready to serve traffic. If this fails, pod is removed from service endpoints
+          readinessProbe:
+            tcpSocket:
+              port: 27017
+            initialDelaySeconds: 20   # Pod created, waits for 10 secs, send TCP connection to port 27017
+            periodSeconds: 5          # checks readiness every 5 seconds
+          # Liveness probe is to check if pod is alive. If this fails, pod is restarted
+          livenessProbe:
+            tcpSocket:    # check via TCP socket. Just checks if container is listening on specified port
+              port: 27017
+            initialDelaySeconds: 40   # time to wait before performing first health check
+            periodSeconds: 5         # frequency of health checks. Here every 5 seconds

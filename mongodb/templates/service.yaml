@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: roboshop
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    project: roboshop
+    environment: dev
+    component: mongodb
+  ports:
+    - protocol: TCP
+      port: 27017    # port on which service is exposed
+      targetPort: 27017   # port on which mongodb container is listening

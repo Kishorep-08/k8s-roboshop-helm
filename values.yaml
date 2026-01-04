@@ -1,0 +1,7 @@
+deployment:
+  replicaCount: 1
+  imageRepo: kishore8856/mongodb
+  imageVersion: v2
+  policy: Always
+service:
+  type: ClusterIP
