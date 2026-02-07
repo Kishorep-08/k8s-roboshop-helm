@@ -1,7 +1,11 @@
 
 deployment:
-  imageRepo: "kishore8856/user"
+  imageRepo: "kishore8856/cart"
   imageVersion: v2
 service:
   servicePort: 8080
+
+
+
+
 

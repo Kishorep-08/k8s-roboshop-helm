@@ -1,18 +1,18 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}
+  name: shipping
   namespace: roboshop
 data:
-  REDIS_URL: {{ .Values.configMap.REDIS_URL }}
-  MONGO_URL: {{ .Values.configMap.MONGO_URL }}
+  CART_ENDPOINT: {{ .Values.configMap.CART_ENDPOINT }}
+  DB_HOST: {{ .Values.configMap.DB_HOST }}
 
 ---
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}
+  name: shipping
   namespace: roboshop
   labels:
     project: roboshop
@@ -23,32 +23,32 @@ spec:
     matchLabels:
       project: roboshop
       environment: dev
-      component: user
+      component: shipping
   template:
     metadata:
       labels:
         project: roboshop
         environment: dev
-        component: user
+        component: shipping
     spec:
       containers:
-      - name: user
-        image: "{{ .Values.deployment.imagerepo }}:{{ .Values.deployment.imageVersion }}"
+      - name: shipping
+        image:  "{{ .Values.deployment.imageRepo }}:{{ .Values.deployment.imageVersion }}"
         imagePullPolicy: Always
         envFrom:
           - configMapRef:
-              name: user
+              name: shipping
         readinessProbe:
           httpGet:
             path: /health
             port: 8080
-          initialDelaySeconds: 5
+          initialDelaySeconds: 25
           periodSeconds: 5                
         livenessProbe:
           httpGet:
             path: /health
             port: 8080
-          initialDelaySeconds: 10
+          initialDelaySeconds: 40
           periodSeconds: 5
 
 ---
@@ -56,14 +56,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: user
+  name: shipping
   namespace: roboshop
 spec:
   selector:
     project: roboshop
     environment: dev
-    component: user
+    component: shipping
   ports:
     - protocol: TCP
       port: {{ .Values.service.servicePort }}    # port on which service is exposed
-      targetPort: 8080   # port on which user container is listening
+      targetPort: 8080   # port on which shipping container is listening
