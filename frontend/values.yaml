@@ -1,0 +1,5 @@
+deployment:
+  imageRepo: "kishore8856/frontend"
+  imageVersion: v2
+service:
+  servicePort: 80

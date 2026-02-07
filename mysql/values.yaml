@@ -1,0 +1,5 @@
+deployment:
+  replicaCount: 1
+  imageRepo: kishore8856/mysql
+  imageVersion: v2
+  policy: Always

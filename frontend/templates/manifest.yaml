@@ -1,0 +1,139 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-cm
+  namespace: roboshop
+data:
+  nginx.conf: | 
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log notice;
+    pid /run/nginx.pid;
+
+    include /usr/share/nginx/modules/*.conf;
+
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                          '$status $body_bytes_sent "$http_referer" '
+                          '"$http_user_agent" "$http_x_forwarded_for"';
+
+        access_log  /var/log/nginx/access.log  main;
+
+        sendfile            on;
+        tcp_nopush          on;
+        keepalive_timeout   65;
+        types_hash_max_size 4096;
+
+        include             /etc/nginx/mime.types;
+        default_type        application/octet-stream;
+
+        include /etc/nginx/conf.d/*.conf;
+
+        server {
+            listen       8080;
+            listen       [::]:80;
+            server_name  _;
+            root         /usr/share/nginx/html;
+
+            include /etc/nginx/default.d/*.conf;
+
+            error_page 404 /404.html;
+            location = /404.html {
+            }
+
+            error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+            }
+
+            location /images/ {
+              expires 5s;
+              root   /usr/share/nginx/html;
+              try_files $uri /images/placeholder.jpg;
+            }
+            location /api/catalogue/ { proxy_pass http://catalogue:8080/; }
+            location /api/user/ { proxy_pass http://user:8080/; }
+            location /api/cart/ { proxy_pass http://cart:8080/; }
+            location /api/shipping/ { proxy_pass http://shipping:8080/; }
+            location /api/payment/ { proxy_pass http://payment:8080/; }
+
+            location /health {
+              stub_status on;
+              access_log off;
+            }
+
+        }
+    }
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: roboshop
+  labels:
+    project: roboshop
+    environment: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      project: roboshop
+      environment: dev
+      component: frontend
+  template:
+    metadata:
+      labels:
+        project: roboshop
+        environment: dev
+        component: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: "{{ .Values.deployment.imageRepo }}:{{ .Values.deployment.imageVersion }}"
+        imagePullPolicy: Always
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 5                
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 25
+          periodSeconds: 5
+        volumeMounts:    # Mount the config map as a volume inside container
+          - name: frontend-config
+            mountPath: /etc/nginx/nginx.conf         # path inside container where config map file is to be mounted
+            subPath: nginx.conf    # subpath tell k8s that nginx.conf alone should be mounted as file. Without this entire config map will be mounted as directory
+      volumes:            # At this stage config map is mounted as volume inside pod
+        - name: frontend-config
+          configMap:
+            name: frontend-cm
+
+############
+#NOTE: Always give subPath while mounting single file from config map. Otherwise entire config map will be mounted as directory. Especially for nginx it should be /etc/nginx/nginx.conf.
+############
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: roboshop
+spec:
+  type: LoadBalancer
+  selector:
+    project: roboshop
+    environment: dev
+    component: frontend
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service.servicePort }}    # port on which service is exposed
+      targetPort: 8080   # port on which frontend container is listening
+

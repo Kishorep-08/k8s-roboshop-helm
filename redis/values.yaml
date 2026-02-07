@@ -1,0 +1,7 @@
+deployment:
+  replicaCount: 1
+  imageRepo: redis
+  imageVersion: 7.0
+  policy: Always
+service:
+  servicePort: 6379
