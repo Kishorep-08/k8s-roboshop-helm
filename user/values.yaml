@@ -1,0 +1,8 @@
+REDIS_URL: "redis://redis:6379"
+MONGO_URL: "mongodb://mongodb:27017/users"
+deployment:
+  imageRepo: "kishore8856/user"
+  imageVersion: v2
+service:
+  servicePort: 8080
+
