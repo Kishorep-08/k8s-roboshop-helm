@@ -10,7 +10,7 @@ data:
 ---
 
 apiVersion: apps/v1
-kind: Deployment
+kind: Deployments
 metadata:
   name: {{ .Release.Name }}
   namespace: roboshop
