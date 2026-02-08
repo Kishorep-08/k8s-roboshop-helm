@@ -2,4 +2,4 @@ apiVersion: v2
 name: user
 version: 1.0.0
 description: "User service installation"
-appversion: v1
+appVersion: v1
